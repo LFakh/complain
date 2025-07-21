@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Send, Upload, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
+import { X, Send, Upload, Image as ImageIcon, Eye, EyeOff, MapPin } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import { Photo } from '../../types';
+import { useGeolocation } from '../../hooks/useGeolocation';
 
 interface ComplaintModalProps {
   photos: Photo[];
@@ -9,14 +10,12 @@ interface ComplaintModalProps {
   onSendComplaint: (data: any) => Promise<boolean>;
 }
 
-// Cloudinary configuration
-const CLOUDINARY_CLOUD_NAME = 'dnvus1oig';
-const CLOUDINARY_UPLOAD_PRESET = 'complain'; // You need to create this in your Cloudinary dashboard
-
-// EmailJS configuration
-const EMAILJS_SERVICE_ID = 'service_73xlrj2';
-const EMAILJS_TEMPLATE_ID = 'template_h9ihkss';
-const EMAILJS_PUBLIC_KEY = 'b8a7WhK1kmfb1E-Y4'; // Replace with your actual public key
+// Configuration from environment variables
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // Initialize EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -33,6 +32,8 @@ export const ComplaintModal: React.FC<ComplaintModalProps> = ({
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState('');
+  const { location, loading: locationLoading, getCurrentLocation, formatLocationString } = useGeolocation();
+  const [includeLocation, setIncludeLocation] = useState(false);
 
   const handlePhotoToggle = (photoId: string) => {
     setSelectedPhotos(prev => 
@@ -127,6 +128,10 @@ export const ComplaintModal: React.FC<ComplaintModalProps> = ({
       
       if (uploadedImageUrls.length > 0) {
         emailMessage += `Uploaded Photos:\n${uploadedImageUrls.join('\n')}\n\n`;
+      }
+      
+      if (includeLocation && location) {
+        emailMessage += `${formatLocationString(location)}\n\n`;
       }
       
       emailMessage += `Sent at: ${new Date().toLocaleString()}`;
@@ -266,6 +271,40 @@ export const ComplaintModal: React.FC<ComplaintModalProps> = ({
                       </div>
                     ))}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Location */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={includeLocation}
+                  onChange={(e) => setIncludeLocation(e.target.checked)}
+                  disabled={isSubmitting}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Include Location</span>
+              </label>
+              {!location && includeLocation && (
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  disabled={locationLoading || isSubmitting}
+                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                >
+                  <MapPin className="w-4 h-4" />
+                  {locationLoading ? 'Getting Location...' : 'Get Location'}
+                </button>
+              )}
+            </div>
+            {location && includeLocation && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  📍 {formatLocationString(location)}
+                </p>
               </div>
             )}
           </div>

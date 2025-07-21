@@ -15,7 +15,10 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
   const startCamera = useCallback(async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: { 
+          facingMode: 'environment',
+          frameRate: { ideal: 30, max: 60 }
+        },
         audio: false
       });
       

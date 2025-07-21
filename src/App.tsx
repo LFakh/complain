@@ -7,6 +7,7 @@ import { FileUpload } from './components/Upload/FileUpload';
 import { CameraCapture } from './components/Camera/CameraCapture';
 import { PhotoCard } from './components/Photos/PhotoCard';
 import { ComplaintModal } from './components/Complaint/ComplaintModal';
+import InstallPWAButton from './components/InstallPWAButton';
 
 function App() {
   const { authState, login, register, logout } = useAuth();
@@ -79,6 +80,8 @@ function App() {
           onSendComplaint={handleSendComplaint}
         />
       )}
+
+      <InstallPWAButton />
     </div>
   );
 }
