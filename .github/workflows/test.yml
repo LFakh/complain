@@ -1,0 +1,61 @@
+name: CI/CD Workflow for fm Branch
+
+on:
+  push:
+    branches:
+      - fm
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start web app
+        run: |
+          npm run dev &
+          sleep 10
+
+      - name: Health check
+        run: |
+          curl -f http://localhost:5173 || exit 1
+
+      - name: Stop web app
+        run: |
+          pkill -f "npm run dev" || true
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Merge fm into main
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge fm --allow-unrelated-histories || (
+            git add . &&
+            git commit -m "Merge fm with automatically with CI/CD"
+          )
+          git push origin main
